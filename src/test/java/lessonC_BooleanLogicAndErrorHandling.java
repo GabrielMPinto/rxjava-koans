@@ -1,11 +1,13 @@
+import io.reactivex.Maybe;
+import io.reactivex.Observable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Function3;
+import io.reactivex.functions.Predicate;
+import io.reactivex.observers.TestObserver;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Observable;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func3;
-import rx.observables.MathObservable;
-import rx.observers.TestSubscriber;
 import util.LessonResources;
 import util.LessonResources.ComcastNetworkAdapter;
 
@@ -14,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static util.LessonResources.Elevator;
@@ -29,15 +32,15 @@ public class lessonC_BooleanLogicAndErrorHandling {
     private int ____;
     private Object ______ = "";
     private Boolean _________;
-    private TestSubscriber<Object> mSubscriber;
+    private TestObserver<Object> mObserver;
 
-    Func1<ElevatorPassenger, Boolean> _______ = elevatorPassenger -> false;
+    Predicate<ElevatorPassenger> _______ = elevatorPassenger -> false;
     Observable<Boolean> __________;
     private Object mThrowable;
 
     @Before
     public void setup() {
-        mSubscriber = new TestSubscriber<>();
+        mObserver = new TestObserver<>();
     }
 
     /**
@@ -54,14 +57,14 @@ public class lessonC_BooleanLogicAndErrorHandling {
 
         LessonResources.Elevator elevator = new LessonResources.Elevator();
 
-        Observable<ElevatorPassenger> elevatorQueueOne = Observable.from(Arrays.asList(
+        Observable<ElevatorPassenger> elevatorQueueOne = Observable.fromIterable(Arrays.asList(
                 new ElevatorPassenger("Max", 168),
                 new ElevatorPassenger("Mike", 234),
                 new ElevatorPassenger("Ronald", 192),
                 new ElevatorPassenger("William", 142),
                 new ElevatorPassenger("Jacqueline", 114)));
 
-        Observable<ElevatorPassenger> elevatorQueueTwo = Observable.from(Arrays.asList(
+        Observable<ElevatorPassenger> elevatorQueueTwo = Observable.fromIterable(Arrays.asList(
                 new ElevatorPassenger("Randy", 320),
                 new ElevatorPassenger("Jerome", 125),
                 new ElevatorPassenger("Sally-Joe", 349),
@@ -76,11 +79,11 @@ public class lessonC_BooleanLogicAndErrorHandling {
          * Hint: Check out the Public methods available on LessonResources.Elevator and passenger!
          */
 
-        Func1<ElevatorPassenger, Boolean> elevatorRule = passenger -> ____ + ____ < ____;
+        Predicate<ElevatorPassenger> elevatorRule = passenger -> ____ + ____ < ____;
         /**
          * Now all we need to do is to plug in the rule in takeWhile()
          */
-        elevatorQueueOne.takeWhile(_______).doOnNext(elevator::addPassenger).subscribe(mSubscriber);
+        elevatorQueueOne.takeWhile(_______).doOnNext(elevator::addPassenger).subscribe(mObserver);
         assertThat(elevator.getPassengerCount()).isGreaterThan(0);
         assertThat(elevator.getTotalWeightInPounds()).isLessThan(Elevator.MAX_CAPACITY_POUNDS);
         assertThat(elevator.getPassengerCount()).isEqualTo(2);
@@ -102,11 +105,11 @@ public class lessonC_BooleanLogicAndErrorHandling {
          * Using what we've learned of rxJava so far, how could we get a list of passengers from elevatorQueueOne that didn't make it
          * into elevatorOne?
          */
-        mSubscriber = new TestSubscriber<>();
+        mObserver = new TestObserver<>();
         //
         // ???
         //
-        // assertThat(mSubscriber.getOnNextEvents()).hasSize(3);
+        // assertThat(mObserver.getOnNextEvents()).hasSize(3);
     }
 
     /**
@@ -127,7 +130,7 @@ public class lessonC_BooleanLogicAndErrorHandling {
         // bonus - there's a MathObservable object that knows how to do math type things to numbers!
         //
         // here, we're getting the smallest of 3 numbers!
-        Integer smallestNetworkLatency = MathObservable.from(Observable.just(randomInt, randomInt2, randomInt3)).min(Integer::compareTo).toBlocking().last();
+        Integer smallestNetworkLatency = IntStream.of(randomInt, randomInt2, randomInt3).min().getAsInt();
 
         Observable<String> networkA = Observable.just("request took : " + randomInt + " millis").delay(randomInt, TimeUnit.MILLISECONDS);
         Observable<String> networkB = Observable.just("request took : " + randomInt2 + " millis").delay(randomInt2, TimeUnit.MILLISECONDS);
@@ -135,9 +138,10 @@ public class lessonC_BooleanLogicAndErrorHandling {
         /**
          * Do we have several servers that give the same data and we want the fastest of the two?
          */
-        Observable.amb(________, ________, ________).subscribe(mSubscriber);
-        mSubscriber.awaitTerminalEvent();
-        List<Object> onNextEvents = mSubscriber.getOnNextEvents();
+        Observable.ambArray(________, ________, ________).subscribe(mObserver);
+        mObserver.awaitTerminalEvent();
+
+        List<Object> onNextEvents = mObserver.values();
         assertThat(onNextEvents).contains("request took : " + ____ + " millis");
         assertThat(onNextEvents).hasSize(1);
 
@@ -171,7 +175,6 @@ public class lessonC_BooleanLogicAndErrorHandling {
         Observable<Integer> range = Observable.range(1, 10);
         //hmmmmmmmm.. how can we emit 1 value of 19 from the original range of numbers?
         assertThat(mSum).isEqualTo(19);
-        //HINT: Could you use the MathObservable, with one of the operators you have learned about already to accomplish a result of 19?
     }
 
     /**
@@ -185,15 +188,16 @@ public class lessonC_BooleanLogicAndErrorHandling {
     public void _5_onErrorIsCalledWhenErrorsOccur() {
         List<String> arrayOne = new ArrayList<>();
         List<String> arrayTwo = new ArrayList<>();
-        List<String> arrayThree =  null;
-        Observable.just(arrayOne, arrayTwo, arrayThree).map(new Func1<List<String>, List<String>>() {
-            @Override
-            public List<String> call(List<String> strings) {
-                strings.add("GOOD JOB!");
-                return strings;
-            }
-        }).doOnError(oops -> ______ = oops).subscribe(mSubscriber);
-        assertThat(mThrowable).isInstanceOf(Throwable.class);
+        List<String> arrayThree = null;
+        Observable.just(arrayOne, arrayTwo, arrayThree)
+                .map(strings -> {
+                    strings.add("GOOD JOB!");
+                    return strings;
+                })
+                .doOnError(oops -> ______ = oops)
+                .subscribe(mObserver);
+
+        assertThat(mThrowable).isInstanceOf(______.getClass());
     }
 
     /**
@@ -203,14 +207,15 @@ public class lessonC_BooleanLogicAndErrorHandling {
      */
     @Test
     public void _6_retryCanAttemptAnOperationWhichFailsMultipleTimesInTheHopesThatItMaySucceeed() {
-        Observable<String> networkRequestObservable = Observable.just(new ComcastNetworkAdapter()).map(new Func1<ComcastNetworkAdapter, String>() {
-            @Override
-            public String call(ComcastNetworkAdapter networkAdapter) {
-                return networkAdapter.getData().get(0);
-            }
-        }).repeat(100);
-        networkRequestObservable.retry(____).subscribe(mSubscriber);
-        assertThat(mSubscriber.getOnNextEvents().get(0)).isEqualTo("extremely important data");
+        Observable<String> networkRequestObservable = Observable.just(new ComcastNetworkAdapter())
+                .map(networkAdapter -> networkAdapter.getData().get(0))
+                .repeat(100);
+
+        networkRequestObservable
+                .retry(____)
+                .subscribe(mObserver);
+
+        assertThat(mObserver.values().get(0)).isEqualTo("extremely important data");
     }
 
     /**
@@ -224,15 +229,15 @@ public class lessonC_BooleanLogicAndErrorHandling {
         Observable<Boolean> tumbler2Observable = Observable.just(20).map(integer -> new Random().nextInt(20) > 15).delay(new Random().nextInt(20), TimeUnit.MILLISECONDS).repeat(1000);
         Observable<Boolean> tumbler3Observable = Observable.just(20).map(integer -> new Random().nextInt(20) > 15).delay(new Random().nextInt(20), TimeUnit.MILLISECONDS).repeat(1000);
 
-        Func3<Boolean, Boolean, Boolean, Boolean> combineTumblerStatesFunction = (tumblerOneUp, tumblerTwoUp, tumblerThreeUp) -> {
+        Function3<Boolean, Boolean, Boolean, Boolean> combineTumblerStatesFunction = (tumblerOneUp, tumblerTwoUp, tumblerThreeUp) -> {
             Boolean allTumblersUnlocked = _________ && _________ && _________;
             return allTumblersUnlocked;
         };
 
-        Observable<Boolean> lockIsPickedObservable = Observable.combineLatest(__________, __________, __________, combineTumblerStatesFunction).takeUntil(unlocked -> unlocked == true).last();
-        lockIsPickedObservable.subscribe(mSubscriber);
-        mSubscriber.awaitTerminalEvent();
-        List<Object> onNextEvents = mSubscriber.getOnNextEvents();
+        Maybe<Boolean> lockIsPickedObservable = Observable.combineLatest(__________, __________, __________, combineTumblerStatesFunction).takeWhile(unlocked -> unlocked == true).lastElement();
+        lockIsPickedObservable.subscribe(mObserver);
+        mObserver.awaitTerminalEvent();
+        List<Object> onNextEvents = mObserver.values();
         assertThat(onNextEvents.size()).isEqualTo(1);
         assertThat(onNextEvents.get(0)).isEqualTo(true);
     }

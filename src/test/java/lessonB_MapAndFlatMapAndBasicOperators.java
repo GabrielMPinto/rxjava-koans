@@ -1,8 +1,9 @@
+import io.reactivex.Observable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+import io.reactivex.observers.TestObserver;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Observable;
-import rx.functions.Func1;
-import rx.observers.TestSubscriber;
 import util.LessonResources.CarnivalFood;
 
 import java.util.Arrays;
@@ -18,11 +19,11 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
     public String mStringA;
     public String mStringB;
     private String mStringC;
-    private TestSubscriber<Object> mSubscriber;
+    private TestObserver<Object> mObserver;
 
     @Before
     public void setup() {
-        mSubscriber = new TestSubscriber<>();
+        mObserver = new TestObserver<>();
     }
 
     /**
@@ -30,13 +31,13 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
      */
     @Test
     public void _1_mapAppliesAFunctionToEachItemAndEmitsDataOnTheOtherSide() {
-        Observable.from(Arrays.asList("kewl", "leet", "speak"))
+        Observable.fromIterable(Arrays.asList("kewl", "leet", "speak"))
                 .map(word -> word.replace("e", "3"))
                 .map(word -> word.replace("l", "1"))
-                .subscribe(mSubscriber);
-        assertThat(mSubscriber.getOnNextEvents()).contains(_____);
-        assertThat(mSubscriber.getOnNextEvents()).contains(_____);
-        assertThat(mSubscriber.getOnNextEvents()).contains(_____);
+                .subscribe(mObserver);
+        assertThat(mObserver.values()).contains(_____);
+        assertThat(mObserver.values()).contains(_____);
+        assertThat(mObserver.values()).contains(_____);
     }
 
     /**
@@ -76,16 +77,17 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
         /**
          *  what do you think calling .map() on the foodCartItemsObservable will do?
          */
-        Observable<Observable<CarnivalFood>> map = foodCartItemsObservable.map(new Func1<List<CarnivalFood>, Observable<CarnivalFood>>() {
-            @Override
-            public Observable<CarnivalFood> call(List<CarnivalFood> foods) {
-                Observable<CarnivalFood> from = Observable.from(foods);
-                return from;
-            }
-        });
-        map.subscribe(mSubscriber);
+        Observable<Observable<CarnivalFood>> map = foodCartItemsObservable
+                .map(new Function<List<CarnivalFood>, Observable<CarnivalFood>>() {
+                    @Override
+                    public Observable<CarnivalFood> apply(List<CarnivalFood> carnivalFoods) throws Exception {
+                        Observable<CarnivalFood> from = Observable.fromIterable(carnivalFoods);
+                        return from;
+                    }
+                });
+        map.subscribe(mObserver);
 
-        assertThat(mSubscriber.getOnNextEvents()).hasSize(____);
+        assertThat(mObserver.values()).hasSize(____);
 
         /** Was the result above what you expected? A bit strange huh? You'd think that you'd get
          * a value matching the number of items of foods in each list at first glance.
@@ -99,23 +101,24 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
          * This is where flatMap comes in!
          */
 
-        mSubscriber = new TestSubscriber<>();
+        mObserver = new TestObserver<>();
         /**
          * flatMap() transform the items emitted by an Observable into Observables, then flattens the emissions from those into a single Observable
          * As martin fowler defines flatMap:
          * Map a function over a collection and flatten the result by one-level. In this case, we will map a function over the list of List<Food>s
          * and then flatten them into one list.
          */
-        Observable<CarnivalFood> individualItemsObservable = foodCartItemsObservable.flatMap(new Func1<List<CarnivalFood>, Observable<CarnivalFood>>() {
-            @Override
-            public Observable<CarnivalFood> call(List<CarnivalFood> foods) {
-                return Observable.from(foods);
-            }
-        });
-        individualItemsObservable.subscribe(mSubscriber);
-        assertThat(mSubscriber.getOnNextEvents()).hasSize(____);
+        Observable<CarnivalFood> individualItemsObservable = foodCartItemsObservable
+                .flatMap(new Function<List<CarnivalFood>, Observable<CarnivalFood>>() {
+                    @Override
+                    public Observable<CarnivalFood> apply(List<CarnivalFood> foods) {
+                        return Observable.fromIterable(foods);
+                    }
+                });
+        individualItemsObservable.subscribe(mObserver);
+        assertThat(mObserver.values()).hasSize(____);
 
-        mSubscriber = new TestSubscriber<>();
+        mObserver = new TestObserver<>();
 
         /**
          * Now that the answer to the riddle of flatMap has been revealed to us, we may filter the stream of
@@ -124,16 +127,16 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
          * public final Observable<T> filter(Func1<? super T,java.lang.Boolean> predicate)
          * if the predicate returns true, the data/event being evaluated in the predicate is passed on
          */
-        individualItemsObservable.filter(new Func1<CarnivalFood, Boolean>() {
+        individualItemsObservable.filter(new Predicate<CarnivalFood>() {
             @Override
-            public Boolean call(CarnivalFood food) {
+            public boolean test(CarnivalFood food) {
                 return food.mPrice < 5.00;
             }
-        }).subscribe(mSubscriber);
+        }).subscribe(mObserver);
 
-        assertThat(mSubscriber.getOnNextEvents()).hasSize(____);
+        assertThat(mObserver.values()).hasSize(____);
 
-        System.out.println("With my 5 bucks I can buy: " + mSubscriber.getOnNextEvents());
+        System.out.println("With my 5 bucks I can buy: " + mObserver.values());
     }
 
     /**
@@ -142,7 +145,7 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
     @Test
     public void _3_theReduceOperatorAccumulatesValuesAndEmitsTheResult() {
 
-        TestSubscriber<Integer> testSubscriber = new TestSubscriber<>();
+        TestObserver<Integer> testObserver = new TestObserver<>();
 
         List<ElevatorPassenger> elevatorPassengers = Arrays.asList(
                 new ElevatorPassenger("Max", 168),
@@ -150,14 +153,14 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
                 new ElevatorPassenger("Ronald", 192),
                 new ElevatorPassenger("William", 142),
                 new ElevatorPassenger("Jacqueline", 114));
-        Observable<ElevatorPassenger> elevatorPassengersObservable = Observable.from(elevatorPassengers);
+        Observable<ElevatorPassenger> elevatorPassengersObservable = Observable.fromIterable(elevatorPassengers);
         /**
          * http://reactivex.io/documentation/operators/reduce.html
          */
-        elevatorPassengersObservable.reduce(0, (accumulatedWeight, elevatorPassenger) ->
-                elevatorPassenger.mWeightInPounds + accumulatedWeight)
-                .subscribe(testSubscriber);
-        assertThat(testSubscriber.getOnNextEvents().get(0)).isEqualTo(____);
+        elevatorPassengersObservable
+                .reduce(0, (accumulatedWeight, elevatorPassenger) -> elevatorPassenger.mWeightInPounds + accumulatedWeight)
+                .subscribe(testObserver);
+        assertThat(testObserver.values().get(0)).isEqualTo(____);
     }
 
     /**
@@ -166,19 +169,19 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
     @Test
     public void _4_repeatOperatorRepeatsThePreviousOperationANumberOfTimes() {
         String weapon = "A Boomerang made of Pure Gold";
-        TestSubscriber<Object> subscriber = new TestSubscriber<>();
+        TestObserver<Object> observer = new TestObserver<>();
 
         Observable<String> repeatingObservable = Observable.just(weapon).repeat(4);
-        repeatingObservable.subscribe(subscriber);
-        assertThat(subscriber.getOnNextEvents()).hasSize(____);
+        repeatingObservable.subscribe(observer);
+        assertThat(observer.values()).hasSize(____);
 
-        subscriber = new TestSubscriber<>();
+        observer = new TestObserver<>();
         /**
          * Challenge - what about this one?? Remember, .repeat() repeats the previous step in the pipeline
          */
         Observable<String> challengeRepeatingObservable = repeatingObservable.repeat(4);
-        challengeRepeatingObservable.subscribe(subscriber);
-        assertThat(subscriber.getOnNextEvents()).hasSize(____);
+        challengeRepeatingObservable.subscribe(observer);
+        assertThat(observer.values()).hasSize(____);
     }
 
 
@@ -216,7 +219,8 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
         mStringA = "";
         Observable.just("wE", "hOpe", "yOU", "aRe", "eNjOyInG", "thIS")
                 .map(s -> _____)
-                .subscribe(s -> mStringA += s + " ");
+                .map(s -> _____)
+                .subscribe(s -> mStringA += s);
 
         assertThat(mStringA).isEqualTo("we hope you are enjoying this ");
     }

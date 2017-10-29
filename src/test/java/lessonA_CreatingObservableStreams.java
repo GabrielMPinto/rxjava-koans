@@ -1,6 +1,7 @@
+import io.reactivex.Observable;
+import io.reactivex.observers.TestObserver;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import java.util.Arrays;
@@ -14,14 +15,14 @@ public class lessonA_CreatingObservableStreams {
     private Integer mSum;
     private String _____;
     private int ____;
-    private TestSubscriber<Object> mSubscriber;
+    private TestObserver<Object> mSubscriber;
     private int mCount1;
     private int mCount2;
     private int mCount3;
 
     @Before
     public void setup() {
-        mSubscriber = new TestSubscriber<>();
+        mSubscriber = new TestObserver<>();
     }
 
     /**
@@ -35,12 +36,11 @@ public class lessonA_CreatingObservableStreams {
      */
     @Test
     public void _1_anObservableStreamOfEventsAndDataEmitsEachItemInOrder() {
-        Observable<String> pipelineOfData = Observable.just("Foo", "Bar");
-        pipelineOfData.subscribe(mSubscriber);
-        List<Object> dataEmitted = mSubscriber.getOnNextEvents();
-        assertThat(dataEmitted).hasSize(____);
-        assertThat(dataEmitted).containsOnlyOnce(_____);
-        assertThat(dataEmitted).containsOnlyOnce(_____);
+        Observable.just("Foo", "Bar")
+                .subscribe(mSubscriber);
+
+        mSubscriber.assertValueCount(____);
+        mSubscriber.assertValues(_____, _____);
     }
 
     /**
@@ -64,10 +64,13 @@ public class lessonA_CreatingObservableStreams {
     @Test
     public void _2_anObservableStreamEmitsThreeMajorEventTypes() {
         Observable<Integer> pipelineOfData = Observable.just(1, 2, 3, 4, 5);
-        pipelineOfData.doOnNext(integer -> mCount1++)
-                .doOnCompleted(() -> mCount2++)
+
+        pipelineOfData
+                .doOnNext(integer -> mCount1++)
+                .doOnComplete(() -> mCount2++)
                 .doOnError(throwable -> mCount3++)
                 .subscribe(mSubscriber);
+
         mSubscriber.awaitTerminalEvent();
         assertThat(mCount1).isEqualTo(____);
         assertThat(mCount2).isEqualTo(____);
@@ -82,7 +85,6 @@ public class lessonA_CreatingObservableStreams {
      */
     @Test
     public void _3_justCreatesAnObservableEmittingItsArguments() {
-
         String stoogeOne = "Larry";
         String stoogeTwo = "Moe";
         String stoogeThree = "Curly";
@@ -90,12 +92,13 @@ public class lessonA_CreatingObservableStreams {
 
         Observable<Object> stoogeDataObservable = Observable.just(_____, _____, _____, _____);
         stoogeDataObservable.subscribe(mSubscriber);
-        /**
+
+        /*
          * As we've seen, the TestSubscriber's getOnNextEvents() method gives a list of all the events emitted by the observable stream in a blocking fashion.
          * This makes it possible for us to test what was emitted by the stream.
          * Without the TestSubscriber, the events would have been emitted asynchronously and our assertion would have failed.
          */
-        List<Object> events = mSubscriber.getOnNextEvents();
+        List<Object> events = mSubscriber.values();
         assertThat(events).containsOnlyOnce(_____);
         assertThat(events).containsOnlyOnce(_____);
         assertThat(events).containsOnlyOnce(_____);
@@ -111,18 +114,19 @@ public class lessonA_CreatingObservableStreams {
     @Test
     public void _4_fromCreatesAnObservableThatEmitsEachElementFromAnIterable() {
         List<String> sandwichIngredients = Arrays.asList("bread (one)", "bread (two)", "cheese", "mayo", "turkey", "lettuce", "pickles", "jalapenos", "Sriracha sauce");
-        Observable<String> favoriteFoodsObservable = Observable.from(sandwichIngredients);
-        TestSubscriber<Object> subscriber = new TestSubscriber<>();
-        favoriteFoodsObservable.subscribe(subscriber);
-        assertThat(subscriber.getOnNextEvents()).hasSize(____);
-        assertThat(subscriber.getOnNextEvents()).contains(_____);
-        // Uncomment the following line and make it pass!
-        //assertThat(subscriber.getOnNextEvents()).containsAll(_____);
 
-        subscriber = new TestSubscriber<>();
+        Observable<String> favoriteFoodsObservable = Observable.fromIterable(sandwichIngredients);
+
+        TestObserver<Object> subscriber = new TestObserver<>();
+        favoriteFoodsObservable.subscribe(subscriber);
+        assertThat(subscriber.values()).hasSize(____);
+        assertThat(subscriber.values()).contains(_____);
+//        assertThat(subscriber.values()).containsAll(_____);
+
+        subscriber = new TestObserver<>();
         Observable.just(sandwichIngredients).subscribe(subscriber);
-        assertThat(subscriber.getOnNextEvents()).hasSize(____);
-        assertThat(subscriber.getOnNextEvents()).contains(_____);
+        assertThat(subscriber.values()).hasSize(____);
+        assertThat(subscriber.values()).contains(_____);
         /**
          * ^^  As you can see here, from() & just() do very different things!
          */
@@ -158,7 +162,9 @@ public class lessonA_CreatingObservableStreams {
          * We also haven't seen doOnNext() yet - its one way we can take action based on one of a series of Observable lifecycle events.
          * http://reactivex.io/documentation/operators/do.html
          */
-        Observable<Integer> numbers = Observable.range(1, 10).doOnNext(integer -> mSum += integer);
+        Observable<Integer> numbers = Observable
+                .range(1, 10)
+                .doOnNext(integer -> mSum += integer);
         //Hint: what would we need to do to get our Observable to start emitting things?
         assertThat(mSum).isEqualTo(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10);
     }
