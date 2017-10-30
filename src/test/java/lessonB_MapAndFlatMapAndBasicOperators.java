@@ -16,8 +16,8 @@ public class lessonB_MapAndFlatMapAndBasicOperators {
 
     private String _____;
     private int ____;
-    public String mStringA;
-    public String mStringB;
+    private String mStringA;
+    private String mStringB;
     private String mStringC;
     private TestObserver<Object> mObserver;
 

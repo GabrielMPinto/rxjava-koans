@@ -2,7 +2,6 @@ import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import org.junit.Before;
 import org.junit.Test;
-import rx.observers.TestSubscriber;
 
 import java.util.Arrays;
 import java.util.List;

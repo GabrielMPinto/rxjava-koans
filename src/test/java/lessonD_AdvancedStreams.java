@@ -1,6 +1,4 @@
 import io.reactivex.Observable;
-import io.reactivex.functions.Function;
-import io.reactivex.observables.GroupedObservable;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

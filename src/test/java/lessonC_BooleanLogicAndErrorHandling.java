@@ -1,13 +1,10 @@
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
-import io.reactivex.functions.Function;
 import io.reactivex.functions.Function3;
 import io.reactivex.functions.Predicate;
 import io.reactivex.observers.TestObserver;
 import org.junit.Before;
 import org.junit.Test;
-import rx.functions.Func1;
-import rx.functions.Func3;
 import util.LessonResources;
 import util.LessonResources.ComcastNetworkAdapter;
 
@@ -26,8 +23,8 @@ import static util.LessonResources.ElevatorPassenger;
 public class lessonC_BooleanLogicAndErrorHandling {
 
     private static final Observable<?> ________ = null;
-    public int mSum;
-    public Boolean mBooleanValue;
+    private int mSum;
+    private Boolean mBooleanValue;
 
     private int ____;
     private Object ______ = "";
